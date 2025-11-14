@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Happy Birthday Puja 🎉</title>
+
+  <!-- Fonts -->
+  <!-- combined Google Fonts: Great Vibes (cursive) + Merriweather (message) + Inter/Playfair -->
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;600&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --accent:#ff4d7a; --accent2:#ffd1e0; --bg1:#071020; --bg2:#1a2130;
+    }
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;color:#fff}
+    body{background:linear-gradient(180deg,var(--bg1),var(--bg2));overflow:hidden;display:flex;align-items:center;justify-content:center}
+    #app{width:min(1100px,96vw);height:min(820px,96vh);position:relative;border-radius:18px;overflow:hidden;box-shadow:0 18px 60px rgba(3,6,20,.6);background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01))}
+    /* three.js canvas fills container */
+    #gl { position:absolute; inset:0; z-index:0; display:block; }
+    /* UI layer */
+    .ui { position:relative; z-index:3; pointer-events:auto; display:grid; grid-template-columns: 300px 1fr; gap:22px; height:100%; padding:34px; align-items:center; }
+    .left { display:flex;flex-direction:column;align-items:center;gap:18px; }
+    .photo-frame{width:220px;height:220px;border-radius:18px;overflow:hidden;border:4px solid rgba(255,255,255,0.04);box-shadow:0 8px 30px rgba(0,0,0,.6);background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent)}
+    .photo-frame img{width:100%;height:100%;object-fit:cover;display:block}
+    .name{font-family:'Playfair Display',serif;font-size:28px;color:var(--accent);margin-top:6px}
+    .open-btn{background:linear-gradient(90deg,var(--accent),var(--accent2));border:none;color:#111;padding:12px 18px;border-radius:12px;font-weight:600;cursor:pointer;box-shadow:0 12px 30px rgba(255,77,122,.12)}
+    .right{padding:8px 6px; align-self:stretch; display:flex;flex-direction:column; justify-content:center;}
+    .title{
+      /* front title: use cursive Great Vibes */
+      font-family: 'Great Vibes', 'Playfair Display', serif;
+      font-size: clamp(28px, 6vw, 44px);
+      margin: 0 0 8px 0;
+      background: linear-gradient(90deg, #ffd1e0 0%, #ff7b9a 50%, #ff4d7a 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 8px 30px rgba(10,8,12,0.55), 0 2px 6px rgba(255,110,140,0.06);
+      letter-spacing: 0.4px;
+    }
+    .subtitle{margin:0 0 18px 0;color:rgba(255,255,255,.86)}
+    .message-card{background:rgba(0,0,0,0.28);padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);box-shadow:inset 0 1px 0 rgba(255,255,255,0.02)}
+    /* message body: use Merriweather for elegant readability */
+    .typed {
+      font-family: 'Merriweather', serif;
+      font-size: 20px;
+      line-height: 1.6;
+      color: #ffeef6;
+      min-height: 120px;
+    }
+    .controls{display:flex;gap:12px;margin-top:12px}
+    .small{font-size:13px;color:rgba(255,255,255,.66)}
+    /* confetti container */
+    #confetti { position:absolute; inset:0; z-index:2; pointer-events:none; }
+    /* mobile responsiveness */
+    @media (max-width:900px){
+      .ui{grid-template-columns:1fr; padding:18px; gap:12px}
+      .left{flex-direction:row;justify-content:space-between;width:100%}
+      .photo-frame{width:96px;height:96px;border-radius:12px}
+      .name{font-size:20px}
+      .title{font-size:26px}
+    }
+  </style>
+</head>
+<body>
+  <div id="app" role="main" aria-label="Birthday greeting for Puja">
+    <!-- WebGL canvas -->
+    <canvas id="gl"></canvas>
+
+    <!-- confetti (2D) -->
+    <canvas id="confetti"></canvas>
+
+    <!-- UI overlay -->
+    <div class="ui">
+      <div class="left">
+        <div class="photo-frame" aria-hidden="false">
+          <!-- replace ./puja.jpg with your local photo filename (same folder) -->
+          <img src="./puja.jpg" alt="Puja">
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;">
+          <div class="name" aria-hidden="false">PUJA</div>
+          <button id="openGift" class="open-btn" aria-pressed="false" aria-label="Open birthday gift">Open the Gift 🎁</button>
+          <div class="small">Tap or press Enter/Space</div>
+        </div>
+      </div>
+
+      <div class="right">
+        <h2 class="title">Happy Birthday, Puja ✨</h2>
+        <p class="subtitle">A little surprise — crafted just for you.</p>
+
+        <div class="message-card" role="region" aria-live="polite">
+          <div id="typed" class="typed" aria-atomic="true"></div>
+          <div class="controls">
+            <button id="sprinkle" class="open-btn" style="background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--accent2)">Sprinkle Hearts</button>
+            <button id="toggleMusic" class="open-btn" style="background:rgba(255,255,255,0.06);color:#fff">Music: On</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- scripts: three.js CDN -->
+  <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
+  <script>
+    /* ====== Quick explanation:
+       - 3D scene: subtle floating particles + a 3D gift box (click to open)
+       - Typed message appears when gift opens
+       - Confetti & heart-sprinkle on interactions
+       - Mobile-friendly: fewer particles, responsive UI
+       Customize messages below in `messages[]` and replace ./puja.jpg and ./bgm.mp3 files.
+    ====== */
+
+    // Basic setup
+    const canvas = document.getElementById('gl');
+    const confCanvas = document.getElementById('confetti');
+    const confCtx = confCanvas.getContext('2d');
+
+    let renderer, scene, camera, box, light;
+    let w = 0, h = 0, dpr = Math.max(1, window.devicePixelRatio || 1);
+
+    function resize() {
+      const rect = document.getElementById('app').getBoundingClientRect();
+      w = Math.round(rect.width);
+      h = Math.round(rect.height);
+      canvas.width = w * dpr; canvas.height = h * dpr; canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+      confCanvas.width = w * dpr; confCanvas.height = h * dpr; confCanvas.style.width = w + 'px'; confCanvas.style.height = h + 'px';
+      if(renderer) { renderer.setSize(w, h, false); camera.aspect = w/h; camera.updateProjectionMatrix(); }
+    }
+
+    function initThree() {
+      renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+      renderer.setPixelRatio(dpr);
+      renderer.setSize(w, h);
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, w/h, 0.1, 1000);
+      camera.position.set(0, 0, 6);
+
+      light = new THREE.DirectionalLight(0xffffff, 1.2);
+      light.position.set(5, 10, 7);
+      scene.add(light);
+      scene.add(new THREE.AmbientLight(0x404040, 0.8));
+
+      // Simple gift box: two boxes (base + lid)
+      const mat = new THREE.MeshStandardMaterial({color:0xff6b8a, metalness:0.2, roughness:0.35});
+      const matRibbon = new THREE.MeshStandardMaterial({color:0xffffff, metalness:0.2, roughness:0.2});
+      const baseGeo = new THREE.BoxGeometry(2.6,1.8,2.6);
+      const base = new THREE.Mesh(baseGeo, mat);
+      base.position.y = -0.1;
+      scene.add(base);
+
+      const lidGeo = new THREE.BoxGeometry(2.7,0.3,2.7);
+      const lid = new THREE.Mesh(lidGeo, matRibbon);
+      lid.position.y = 1.05;
+      lid.rotation.x = 0.02;
+      scene.add(lid);
+
+      // small bow
+      const bowGeo = new THREE.TorusGeometry(0.28,0.08,16,28);
+      const bow = new THREE.Mesh(bowGeo, matRibbon);
+      bow.position.set(0,1.2,0);
+      bow.rotation.z = Math.PI/4;
+      scene.add(bow);
+
+      // group for animation
+      box = new THREE.Group();
+      box.add(base, lid, bow);
+      scene.add(box);
+      base.castShadow = lid.castShadow = bow.castShadow = true;
+
+      // particle field for depth
+      const particles = new THREE.BufferGeometry();
+      const count = w < 780 ? 140 : 420;
+      const positions = new Float32Array(count * 3);
+      for(let i=0;i<count;i++){
+        positions[i*3] = (Math.random()*2-1)*12;
+        positions[i*3+1] = (Math.random()*2-1)*6;
+        positions[i*3+2] = (Math.random()*2-1)*12;
+      }
+      particles.setAttribute('position', new THREE.BufferAttribute(positions,3));
+      const pMat = new THREE.PointsMaterial({size: (w<780?0.05:0.12), color:0xffb3c6, transparent:true, opacity:0.9});
+      const points = new THREE.Points(particles,pMat);
+      scene.add(points);
+
+      animate();
+    }
+
+    let clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
+      if(box) box.rotation.y = Math.sin(t*0.6) * 0.2;
+      renderer.render(scene, camera);
+    }
+
+    // typed message (simple)
+    const typedEl = document.getElementById('typed');
+    const messages = [
+      "Dear Puja,",
+      "Happy Birthday 🎂 — seeing you makes ordinary days glow.",
+      "You quietly make moments special; your smile stays with me.",
+      "I hope today gives you all the joy you bring to others.",
+      "— With warm wishes, (your friend)"
+    ];
+
+    function typeOut(lines, el, speed = 28) {
+      el.textContent = '';
+      let idx = 0, li = 0;
+      function step() {
+        if(li >= lines.length) return;
+        const line = lines[li];
+        if(idx <= line.length){
+          el.textContent = line.slice(0, idx) + (idx%2 ? '|' : '');
+          idx++;
+          setTimeout(step, speed);
+        } else {
+          // pause, then next line appended below
+          el.textContent = el.textContent.replace(/\|$/, '') + '\n\n';
+          li++; idx = 0;
+          setTimeout(step, 350);
+        }
+      }
+      step();
+    }
+
+    // confetti 2D system (lightweight)
+    const confettiPieces = [];
+    function spawnConfetti(x,y,amount=40){
+      for(let i=0;i<amount;i++){
+        confettiPieces.push({
+          x: x + (Math.random()-0.5)*60,
+          y: y + (Math.random()-0.5)*30,
+          vx: (Math.random()-0.5)*6,
+          vy: -6 - Math.random()*8,
+          size: 6 + Math.random()*10,
+          rot: Math.random()*360,
+          vr: (Math.random()-0.5)*20,
+          color: ['#ff6b8a','#ffd166','#ff9aa7','#ff3b6b'][Math.floor(Math.random()*4)],
+          life: 120 + Math.random()*80
+        });
+      }
+    }
+
+    function drawConfetti(){
+      confCtx.clearRect(0,0,confCanvas.width, confCanvas.height);
+      confCtx.save();
+      confCtx.scale(dpr,dpr);
+      for(let i=confettiPieces.length-1;i>=0;i--){
+        const p = confettiPieces[i];
+        p.vy += 0.35;
+        p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+        confCtx.save();
+        confCtx.translate(p.x, p.y);
+        confCtx.rotate(p.rot * Math.PI/180);
+        confCtx.fillStyle = p.color;
+        confCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+        confCtx.restore();
+        p.life--;
+        if(p.y > h + 50 || p.life <=0) confettiPieces.splice(i,1);
+      }
+      confCtx.restore();
+      requestAnimationFrame(drawConfetti);
+    }
+
+    // hearts sprinkle (DOM)
+    function sprinkleHearts(count=18){
+      for(let i=0;i<count;i++){
+        const el = document.createElement('div');
+        el.textContent = '💖';
+        el.style.position = 'absolute';
+        el.style.left = (20 + Math.random()*60) + '%';
+        el.style.top = (20 + Math.random()*60) + '%';
+        el.style.fontSize = (Math.random()*18 + 12) + 'px';
+        el.style.pointerEvents = 'none';
+        el.style.zIndex = 4;
+        document.body.appendChild(el);
+        el.animate([
+          { transform: 'translateY(0) scale(1)', opacity:1 },
+          { transform: `translateY(-120px) scale(.6)`, opacity:0 }
+        ], { duration: 1200 + Math.random()*900, easing:'cubic-bezier(.2,.8,.2,1)'});
+        setTimeout(()=> el.remove(), 2200);
+      }
+    }
+
+    // open gift interaction
+    const openBtn = document.getElementById('openGift');
+    let opened = false;
+    openBtn.addEventListener('click', () => {
+      if(opened) return;
+      opened = true;
+      openBtn.setAttribute('aria-pressed','true');
+      // animate lid: simple approach via Three objects: lift lid (rotate + translate)
+      // for simplicity we rotate the whole group here (visual open)
+      const duration = 800;
+      const start = performance.now();
+      const startRot = box.rotation.x || 0;
+      function lidAnim(now){
+        const p = Math.min(1, (now - start)/duration);
+        box.rotation.x = startRot - p*0.9;
+        box.rotation.y += 0.05 * (1-p);
+        renderer.render(scene, camera);
+        if(p < 1) requestAnimationFrame(lidAnim);
+        else {
+          // reveal message + confetti + hearts
+          typeOut(messages, typedEl, 28);
+          spawnConfetti(w/2, h/2, 90);
+          sprinkleHearts(36);
+          // optional: autoplay music (user gesture satisfied by click)
+          const a = new Audio('./bgm.mp3'); a.volume = 0.45; a.play().catch(()=>{});
+        }
+      }
+      requestAnimationFrame(lidAnim);
+    });
+
+    // sprinkle button
+    document.getElementById('sprinkle').addEventListener('click', ()=> {
+      sprinkleHearts(28);
+      spawnConfetti(w/2, h/2, 60);
+    });
+
+    // music toggle (simple)
+    let music = null;
+    const musicBtn = document.getElementById('toggleMusic');
+    musicBtn.addEventListener('click', ()=>{
+      if(!music) { music = new Audio('./happybirthday.mp3'); music.loop = true; music.volume = 0.42; music.play().catch(()=>{}); musicBtn.textContent = 'Music: On'; }
+      else if(music.paused){ music.play(); musicBtn.textContent = 'Music: On'; }
+      else { music.pause(); musicBtn.textContent = 'Music: Off'; }
+    });
+
+    // accessibility: keyboard open
+    openBtn.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBtn.click(); }
+    });
+
+    // init all
+    function start(){
+      resize();
+      initThree();
+      drawConfetti();
+      // gentle resize observer to update on layout changes
+      window.addEventListener('resize', () => { dpr = Math.max(1, window.devicePixelRatio || 1); resize(); }, {passive:true});
+    }
+    start();
+
+  </script>
+</body>
+</html>
